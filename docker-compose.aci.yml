@@ -1,0 +1,136 @@
+version: '3.3'
+
+services:
+  tyk-dashboard:
+    build:
+      context: .
+      dockerfile: ./tyk-dashboard/Dockerfile
+      
+    container_name: tyk-dashboard
+    image: tykregistry.azurecr.io/dashboard
+
+    environment:
+      - TYK_DB_LISTENPORT=3000
+      - TYK_DB_TYKAPI_HOST=http://tyk-gateway
+      - TYK_DB_TYKAPI_PORT=8080
+      - TYK_DB_REDISHOST=tyk-redis
+      - TYK_DB_REDISPORT=6379
+      - TYK_DB_ENABLECLUSTER=false
+      - TYK_DB_REDISUSESSL=false
+      - TYK_DB_ENABLEOWNERSHIP=true
+      - TYK_DB_ENABLEUPDATEKEYBYHASH=true
+
+    ports:
+    - "3000:3000"
+
+    deploy:
+      resources:
+        reservations:
+          cpus: '.5'
+          memory: 1G
+        limits:
+          cpus: '.5'
+          memory: 1G
+
+    networks:
+    - tyk
+
+  tyk-gateway:
+    build:
+      context: .
+      dockerfile: ./tyk-gateway/Dockerfile
+
+    container_name: tyk-gateway
+    image: tykregistry.azurecr.io/gateway
+
+    environment:
+      - TYK_GW_LISTENPORT=8080
+      - TYK_GW_STORAGE_HOST=tyk-redis
+      - TYK_GW_STORAGE_PORT=6379
+      - TYK_GW_STORAGE_ENABLECLUSTER=false
+      - TYK_GW_STORAGE_USESSL=false
+      - TYK_GW_POLICIES_POLICYCONNECTIONSTRING=http://tyk-dashboard:3000
+      - TYK_GW_DBAPPCONFOPTIONS_CONNECTIONSTRING=http://tyk-dashboard:3000
+
+    ports:
+    - "8080:8080"
+
+    deploy:
+      resources:
+        reservations:
+          cpus: '.5'
+          memory: 1G
+        limits:
+          cpus: '.5'
+          memory: 1G
+
+    networks:
+    - tyk
+
+  tyk-pump:
+    build:
+      context: .
+      dockerfile: ./tyk-pump/Dockerfile
+
+    container_name: tyk-pump
+    image: tykregistry.azurecr.io/pump
+
+    environment:
+      - TYK_PMP_ANALYTICSSTORAGECONFIG_HOST=tyk-redis
+      - TYK_PMP_ANALYTICSSTORAGECONFIG_PORT=6379
+      - TYK_PMP_ANALYTICSSTORAGECONFIG_ENABLECLUSTER=false
+      - TYK_PMP_ANALYTICSSTORAGECONFIG_REDISUSESSL=false
+
+    deploy:
+      resources:
+        reservations:
+          cpus: '.5'
+          memory: 1G
+        limits:
+          cpus: '.5'
+          memory: 1G
+
+    networks:
+    - tyk
+
+  tyk-redis:
+    image: redis
+    container_name: redis
+
+    ports:
+    - "6379:6379"
+
+    deploy:
+      resources:
+        reservations:
+          cpus: '.5'
+          memory: 1G
+        limits:
+          cpus: '.5'
+          memory: 1G
+
+    networks:
+    - tyk
+
+  tyk-mongo:
+    image: mongo:3.2
+    container_name: mongo
+    command: ["mongod", "--smallfiles"]
+
+    ports:
+    - "27017:27017"
+
+    deploy:
+      resources:
+        reservations:
+          cpus: '.5'
+          memory: 1G
+        limits:
+          cpus: '.5'
+          memory: 1G
+
+    networks:
+    -  tyk
+
+networks:
+  tyk:

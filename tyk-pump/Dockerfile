@@ -1,0 +1,5 @@
+FROM        tykio/tyk-pump-docker-pub:latest
+
+MAINTAINER  Zaid Albirawi
+
+COPY        ./confs/pump.conf /opt/tyk-pump/pump.conf
