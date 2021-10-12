@@ -99,6 +99,9 @@ services:
 
     ports:
     - "6379:6379"
+    
+    volumes:
+    - redis-data:/data
 
     deploy:
       resources:
@@ -120,6 +123,9 @@ services:
     ports:
     - "27017:27017"
 
+    volumes:
+    - mongo-data:/data/db
+
     deploy:
       resources:
         reservations:
@@ -134,3 +140,16 @@ services:
 
 networks:
   tyk:
+
+volumes:
+  redis-data:
+    driver: azure_file
+    driver_opts:
+      share_name: redis
+      storage_account_name: tykacistorage
+
+  mongo-data:
+    driver: azure_file
+    driver_opts:
+      share_name: mongo
+      storage_account_name: tykacistorage
